@@ -12,15 +12,27 @@ import feature_analysis as fa
 f_trn = '__input/train.csv'
 f_tst = '__input/test.csv'
 
+trn_cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time', 'is_attributed']
+tst_cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time']
+
+dtypes = {
+    'ip'            : 'uint32',
+    'app'           : 'uint16',
+    'device'        : 'uint16',
+    'os'            : 'uint16',
+    'channel'       : 'uint16',
+    'is_attributed' : 'uint8',
+    'click_id'      : 'uint32'
+}
 
 resize_data = False
 
 if not resize_data:
-	trn = pd.read_csv(f_trn)
-	tst = pd.read_csv(f_tst)
+	trn = pd.read_csv(f_trn, dtype=dtypes, usecols=trn_cols)
+	tst = pd.read_csv(f_tst, dtype=dtypes, usecols=tst_cols)
 else:
-	trn = pd.read_csv(f_trn)
-	
+	trn = pd.read_csv(f_trn, dtype=dtypes, usecols=trn_cols)
+
 	dat, _ = train_test_split(trn, train_size=0.003, test_size=0.0001)
 	del trn, _
 
@@ -60,6 +72,7 @@ click_time = pd.to_datetime(tst.click_time)
 tst['click_hour'] = click_time.dt.hour
 
 del click_time
+gc.collect()
 
 cate_columns.append('click_hour')
 
@@ -96,13 +109,13 @@ trn, tst, smooth_columns = fg.CreateSmoothingColumns(trn, tst, cate_columns, tar
 '''== dummy columns for click hour =='''
 
 
-dumm = pd.get_dummies(trn.click_hour, prefix='click_hour')
-trn = pd.concat([trn, dumm], axis=1)
+# dumm = pd.get_dummies(trn.click_hour, prefix='click_hour')
+# trn = pd.concat([trn, dumm], axis=1)
 
-dumm = pd.get_dummies(tst.click_hour, prefix='click_hour')
-tst = pd.concat([tst, dumm], axis=1)
+# dumm = pd.get_dummies(tst.click_hour, prefix='click_hour')
+# tst = pd.concat([tst, dumm], axis=1)
 
-dumm_columns += dumm.columns.tolist()
+# dumm_columns += dumm.columns.tolist()
 
 
 # trn, tst, oof_hour_columns = fg.CreateOOFColumns(trn, tst, ['click_hour'], target='is_attributed')
