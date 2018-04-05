@@ -28,7 +28,9 @@ dtypes = {
 resize_data = False
 
 if not resize_data:
-	trn = pd.read_csv(f_trn, dtype=dtypes, usecols=trn_cols)
+	n_skiprows = 110000000
+
+	trn = pd.read_csv(f_trn, dtype=dtypes, usecols=trn_cols, skiprows=range(1, n_skiprows))
 	tst = pd.read_csv(f_tst, dtype=dtypes, usecols=tst_cols)
 else:
 	trn = pd.read_csv(f_trn, dtype=dtypes, usecols=trn_cols)
