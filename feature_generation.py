@@ -60,9 +60,11 @@ def CreateCateFreqColumns(trn, tst, cate_columns):
 
 	trn_new = df_all.loc[df_all.train==1].sort_values(by='row_id')
 	tst_new = df_all.loc[df_all.train==0].sort_values(by='row_id')
+	trn_new.index = trn.index
+	tst_new.index = tst.index
 	
-	trn[new_columns] = trn_new[new_columns].values
-	tst[new_columns] = tst_new[new_columns].values
+	trn[new_columns] = trn_new[new_columns]
+	tst[new_columns] = tst_new[new_columns]
 
 	trn.drop(['train', 'row_id'], axis=1, inplace=True)
 	tst.drop(['train', 'row_id'], axis=1, inplace=True)
@@ -181,9 +183,11 @@ def CreateHolidayWeekCount(df_trn, df_tst):
 
 	df_trn_new = df_all[df_all.train == 1].sort_values(by='row_id')
 	df_tst_new = df_all[df_all.train == 0].sort_values(by='row_id')
+	df_trn_new.index = df_trn.index
+	df_tst_new.index = df_tst.index
 
-	df_trn[new_columns] = df_trn_new[new_columns].values
-	df_tst[new_columns] = df_tst_new[new_columns].values
+	df_trn[new_columns] = df_trn_new[new_columns]
+	df_tst[new_columns] = df_tst_new[new_columns]
 
 	df_trn.drop(['train', 'row_id'], axis=1, inplace=True)
 	df_tst.drop(['train', 'row_id'], axis=1, inplace=True)
@@ -275,9 +279,11 @@ def CreateFlagHistory(df_trn, df_tst, flag):
 
 	df_trn_new = df_all[df_all.train == 1].sort_values(by='row_id')
 	df_tst_new = df_all[df_all.train == 0].sort_values(by='row_id')
+	df_trn_new.index = df_trn.index
+	df_tst_new.index = df_tst.index
 
-	df_trn[new_columns] = df_trn_new[new_columns].values
-	df_tst[new_columns] = df_tst_new[new_columns].values
+	df_trn[new_columns] = df_trn_new[new_columns]
+	df_tst[new_columns] = df_tst_new[new_columns]
 
 	df_trn.drop(['row_id', 'train'], axis=1, inplace=True)
 	df_tst.drop(['row_id', 'train'], axis=1, inplace=True)
@@ -443,6 +449,7 @@ def CreateHistoryColumns3(df_trn, df_tst, use_tst_target=False):
 
 
 
+
 #===== HISTORY COLUMNS I 
 
 def impute_visitors_by_weekday(ts):
@@ -547,8 +554,13 @@ def CreateHistoryColumns(df_trn, df_tst, use_tst_target=False):
 		df_trn[c] = 0
 		df_tst[c] = 0
 
-	df_trn[new_columns] = df_all.loc[df_all.train==1, new_columns].values
-	df_tst[new_columns] = df_all.loc[df_all.train==0, new_columns].values
+	trn_new = df_all.loc[df_all.train==1, new_columns]
+	tst_new = df_all.loc[df_all.train==0, new_columns]
+	trn_new.index = df_trn.index
+	tst_new.index = df_tst.index
+
+	df_trn[new_columns] = trn_new
+	df_tst[new_columns] = tst_new
 	
 	return df_trn, df_tst, new_columns
 
@@ -652,8 +664,13 @@ def CreateHistoryColumns2(df_trn, df_tst, use_tst_target=False):
 		df_trn[c] = 0
 		df_tst[c] = 0
 
-	df_trn[new_columns] = df_all.loc[df_all.train==1, new_columns].values
-	df_tst[new_columns] = df_all.loc[df_all.train==0, new_columns].values
+	trn_new = df_all.loc[df_all.train==1, new_columns]
+	tst_new = df_all.loc[df_all.train==0, new_columns]
+	trn_new = df_trn.index
+	tst_new = df_tst.index
+
+	df_trn[new_columns] = trn_new
+	df_tst[new_columns] = tst_new
 	
 	return df_trn, df_tst, new_columns
 
@@ -1478,6 +1495,8 @@ def CreateBinaryEncodingColumns(df_train, df_test, columns):
 
 	df_train_new.sort_values(by='row_id', inplace=True)
 	df_test_new.sort_values(by='row_id', inplace=True)
+	df_train_new.index = df_train.index
+	df_test_new.index = df_test.index
 
 	df_train[new_columns] = df_train_new[new_columns]
 	df_test[new_columns] = df_test_new[new_columns]
@@ -1598,6 +1617,8 @@ def CreateFnsaColumns(df_train, df_test, in_columns):
 	new_test = df_all[df_all['train'] == 0]
 	new_train.sort_values('row_id', inplace=True)
 	new_test.sort_values('row_id', inplace=True)
+	new_train.index = df_train.index
+	new_test.index = df_test.index
 
 	df_train[new_columns] = new_train[new_columns]
 	df_test[new_columns] = new_test[columns]

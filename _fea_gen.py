@@ -12,40 +12,61 @@ import feature_analysis as fa
 f_trn = '__input/train.csv'
 f_tst = '__input/test.csv'
 
-trn = pd.read_csv(f_trn)
 
-orig_columns = ['ip', 'app', 'device', 'os', 'channel', 'click_time', 'attributed_time']
-cate_columns = ['ip', 'app', 'device', 'os', 'channel']
+resize_data = False
 
-target = 'is_attributed'
+if not resize_data:
+	trn = pd.read_csv(f_trn)
+	tst = pd.read_csv(f_tst)
+else:
+	trn = pd.read_csv(f_trn)
+	
+	dat, _ = train_test_split(trn, train_size=0.003, test_size=0.0001)
+	del trn, _
 
-dat, _ = train_test_split(trn, train_size=0.001, test_size=0.0001)
-del trn
-gc.collect()
+	gc.collect()
 
-tst_datetime = '2017-11-09 00:00:00'
-index_tst = dat.loc[dat.click_time >= tst_datetime].index
-index_trn = dat.loc[dat.click_time < tst_datetime].index
+	tst_datetime = '2017-11-09 00:00:00'
+	index_trn = dat.loc[dat.click_time < tst_datetime].index
+	index_tst = dat.loc[dat.click_time >= tst_datetime].index
 
-tst = dat.loc[index_tst]
-trn = dat.loc[index_trn]
+	trn = dat.loc[index_trn]
+	tst = dat.loc[index_tst]
 
-del dat
-gc.collect()
+	del dat
+	gc.collect()
+
+print '\nSize of train data :', trn.shape, '\nSize of test data :', tst.shape
+
 
 
 # trn, tst = train_test_split(trn, train_size=0.0007, test_size=0.0003)
 # X_trn, X_tst, y_trn, y_tst = train_test_split(trn[])
 
-gc.collect()
+target = 'is_attributed'
+
+orig_columns = ['ip', 'app', 'device', 'os', 'channel', 'click_time', 'attributed_time']
+cate_columns = ['ip', 'app', 'device', 'os', 'channel']
+dumm_columns = list()
 
 
 
+'''== hour of click time =='''
+
+click_time = pd.to_datetime(trn.click_time)
+trn['click_hour'] = click_time.dt.hour
+
+click_time = pd.to_datetime(tst.click_time)
+tst['click_hour'] = click_time.dt.hour
+
+del click_time
+
+cate_columns.append('click_hour')
 
 
 '''=== OOF features ==='''
 
-trn, tst, oof_columns = fg.CreateOOFColumns(trn, tst, cate_columns, target='is_attributed')
+trn, tst, oof_columns = fg.CreateOOFColumns(trn, tst, cate_columns, target=target)
 
 # trn.groupby('is_attributed')[oof_columns].describe()
 
@@ -59,7 +80,7 @@ trn, tst, oof_columns = fg.CreateOOFColumns(trn, tst, cate_columns, target='is_a
 
 '''== smoothing features =='''
 
-trn, tst, smooth_columns = fg.CreateSmoothingColumns(trn, tst, cate_columns, target='is_attributed')
+trn, tst, smooth_columns = fg.CreateSmoothingColumns(trn, tst, cate_columns, target=target)
 
 # trn.groupby('is_attributed')[smooth_columns].describe()
 
@@ -70,13 +91,10 @@ trn, tst, smooth_columns = fg.CreateSmoothingColumns(trn, tst, cate_columns, tar
 # 	print ns, ':', res.mean(), ',', res.std()
 
 
-'''== day, hour of click time=='''
 
-click_time = pd.to_datetime(trn.click_time)
-trn['click_hour'] = click_time.dt.hour
 
-click_time = pd.to_datetime(tst.click_time)
-tst['click_hour'] = click_time.dt.hour
+'''== dummy columns for click hour =='''
+
 
 dumm = pd.get_dummies(trn.click_hour, prefix='click_hour')
 trn = pd.concat([trn, dumm], axis=1)
@@ -84,11 +102,11 @@ trn = pd.concat([trn, dumm], axis=1)
 dumm = pd.get_dummies(tst.click_hour, prefix='click_hour')
 tst = pd.concat([tst, dumm], axis=1)
 
-dumm_click_hour_columns = dumm.columns.tolist()
+dumm_columns += dumm.columns.tolist()
 
 
-trn, tst, oof_hour_columns = fg.CreateOOFColumns(trn, tst, ['click_hour'], target='is_attributed')
-trn, tst, smooth_hour_columns = fg.CreateSmoothingColumns(trn, tst, ['click_hour'], target='is_attributed')
+# trn, tst, oof_hour_columns = fg.CreateOOFColumns(trn, tst, ['click_hour'], target='is_attributed')
+# trn, tst, smooth_hour_columns = fg.CreateSmoothingColumns(trn, tst, ['click_hour'], target='is_attributed')
 
 
 ## oof = smooth > dummy
@@ -97,24 +115,24 @@ trn, tst, smooth_hour_columns = fg.CreateSmoothingColumns(trn, tst, ['click_hour
 
 
 '''== Rescale smooth columns =='''
-from sklearn.preprocessing import StandardScaler
+# from sklearn.preprocessing import StandardScaler
 
-rescaled_smooth_columns = ['rescaled_' + c for c in smooth_columns]
+# rescaled_smooth_columns = ['rescaled_' + c for c in smooth_columns]
 
-scaler = StandardScaler()
-scaler = scaler.fit(trn[smooth_columns])
+# scaler = StandardScaler()
+# scaler = scaler.fit(trn[smooth_columns])
 
-trn_mat = scaler.transform(trn[smooth_columns])
-trn_new = pd.DataFrame(trn_mat, columns=rescaled_smooth_columns, index=trn.index)
-trn = pd.concat([trn, trn_new], axis=1)
+# trn_mat = scaler.transform(trn[smooth_columns])
+# trn_new = pd.DataFrame(trn_mat, columns=rescaled_smooth_columns, index=trn.index)
+# trn = pd.concat([trn, trn_new], axis=1)
 
-tst_mat = scaler.transform(tst[smooth_columns])
-tst_new = pd.DataFrame(tst_mat, columns=rescaled_smooth_columns, index=tst.index)
-tst = pd.concat([tst, tst_new], axis=1)
+# tst_mat = scaler.transform(tst[smooth_columns])
+# tst_new = pd.DataFrame(tst_mat, columns=rescaled_smooth_columns, index=tst.index)
+# tst = pd.concat([tst, tst_new], axis=1)
 
 
 
-trn, tst, rescaled_dumm_hour_columns = fg.CreateRescaledColumns(trn, tst, dumm_click_hour_columns)
+# trn, tst, rescaled_dumm_hour_columns = fg.CreateRescaledColumns(trn, tst, dumm_columns)
 
 
 ## rescaling almost change nothing
@@ -132,7 +150,7 @@ trn, tst, cate_freq_columns = fg.CreateCateFreqColumns(trn, tst, cate_columns)
 
 '''== statistics of 'is_attributed' on categorical_columns =='''
 
-trn, tst, stats_columns = fg.CreateStatsFeatures(trn, tst, observe_columns=[target], group_columns=cate_columns+['click_hour'])
+trn, tst, stats_columns = fg.CreateStatsFeatures(trn, tst, observe_columns=[target], group_columns=cate_columns)
 
 
 # del_columns = list()
@@ -181,8 +199,6 @@ trn, tst, stats_columns = fg.CreateStatsFeatures(trn, tst, observe_columns=[targ
 use_columns = list()
 use_columns += oof_columns
 use_columns += smooth_columns
-use_columns += oof_hour_columns
-use_columns += smooth_hour_columns
 use_columns += cate_freq_columns
 use_columns += stats_columns
 

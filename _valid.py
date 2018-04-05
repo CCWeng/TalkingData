@@ -260,14 +260,14 @@ columns2 = smooth_columns + ['app_freq']
 
 
 
-model1 = LogisticRegression(class_weight='balanced', fit_intercept=False)
-model2 = LogisticRegression(class_weight='balanced', fit_intercept=False)
+# model1 = LogisticRegression(class_weight='balanced', fit_intercept=False)
+# model2 = LogisticRegression(class_weight='balanced', fit_intercept=False)
 
-model1 = LogisticRegression(fit_intercept=False)
-model2 = LogisticRegression(fit_intercept=False)
+# model1 = LogisticRegression(fit_intercept=False)
+# model2 = LogisticRegression(fit_intercept=False)
 
-model1 = LogisticRegression(solver='newton-cg', max_iter=100000)
-model2 = LogisticRegression(solver='newton-cg', max_iter=100000)
+# model1 = LogisticRegression(solver='newton-cg', max_iter=100000)
+# model2 = LogisticRegression(solver='newton-cg', max_iter=100000)
 
 model1 = LogisticRegression(penalty='l1')
 model2 = LogisticRegression(penalty='l1')
@@ -359,6 +359,7 @@ plt.legend(['columns1', 'columns2'], loc='best')
 plt.show()
 
 columns3 = total_columns
+columns3 = use_columns
 
 cv_res1 = cross_val_score(model1, trn[columns1], trn[target], cv=5, scoring='roc_auc')
 cv_res2 = cross_val_score(model2, trn[columns2], trn[target], cv=5, scoring='roc_auc')
@@ -376,9 +377,11 @@ pp_trn1 = model1.predict_proba(trn[columns1])[:, 1]
 pp_trn2 = model2.predict_proba(trn[columns2])[:, 1]
 pp_trn3 = model3.predict_proba(trn[columns3])[:, 1]
 
-auc_trn1 = roc_auc_score(y, pp_trn1)
-auc_trn2 = roc_auc_score(y, pp_trn2)
-auc_trn3 = roc_auc_score(y, pp_trn3)
+y_trn = trn[target]
+
+auc_trn1 = roc_auc_score(y_trn, pp_trn1)
+auc_trn2 = roc_auc_score(y_trn, pp_trn2)
+auc_trn3 = roc_auc_score(y_trn, pp_trn3)
 
 print auc_trn1, auc_trn2, auc_trn3
 
