@@ -736,7 +736,7 @@ def CreateSmoothingColumns(df_trn, df_tst, in_columns, target, min_samples_leaf=
 	N = len(in_columns)
 	for i, old_c in enumerate(in_columns):
 		if verbose:
-			sys.stdout.write("\r : out-of-fold average feature for %s (%d/%d)                  " % (old_c, i+1, N))
+			sys.stdout.write("\r : smooth feature for %s (%d/%d)                  " % (old_c, i+1, N))
 			sys.stdout.flush()
 
 		new_c = "smooth_%s@%s" % (tgt_c, old_c)

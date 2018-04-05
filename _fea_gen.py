@@ -165,7 +165,7 @@ trn, tst, cate_freq_columns = fg.CreateCateFreqColumns(trn, tst, cate_columns)
 
 '''== statistics of 'is_attributed' on categorical_columns =='''
 
-trn, tst, stats_columns = fg.CreateStatsFeatures(trn, tst, observe_columns=[target], group_columns=cate_columns)
+# trn, tst, stats_columns = fg.CreateStatsFeatures(trn, tst, observe_columns=[target], group_columns=cate_columns)
 
 
 # del_columns = list()
@@ -215,5 +215,31 @@ use_columns = list()
 use_columns += oof_columns
 use_columns += smooth_columns
 use_columns += cate_freq_columns
-use_columns += stats_columns
+# use_columns += stats_columns
+
+
+
+# tmp
+
+from sklearn.linear_model import LogisiticRegression
+from sklearn.model_selection import cross_val_score
+
+
+model_lr = LogisiticRegression(penalty='l1')
+
+cv_res = cross_val_score(model_lr, trn[use_columns], trn[target], cv=5, scoring='roc_auc')
+print 'Results of cross-validation :', cv_res.mean(), cv_res.std()
+
+model_lr.fit(trn[use_columns], trn[target])
+pp = model.predict_proba(tst[use_columns])[:, 1]
+
+tst['is_attributed'] = pp
+
+d_out = '__output/'
+output_columns = ['click_id', 'is_attributed']
+
+tst.to_csv(d_output+'lr_180405_01.csv', columns = output_columns, index=False)
+
+
+
 
