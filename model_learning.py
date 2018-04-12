@@ -136,8 +136,8 @@ def xgbfit(alg, dtrain, dtest, predictors,
 
     alg.fit(dtrain[predictors], dtrain[target], eval_metric='auc')
         
-    dtrain_pred = 1 - alg.predict_proba(dtrain[predictors])[:, 0]
-    dtest_pred = 1 - alg.predict_proba(dtest[predictors])[:, 0]
+    dtrain_pred = alg.predict_proba(dtrain[predictors])[:, 1]
+    dtest_pred = alg.predict_proba(dtest[predictors])[:, 1]
     
     auc_trn = roc_auc_score(dtrain[target], dtrain_pred)
     auc_tst = roc_auc_score(dtest[target], dtest_pred)

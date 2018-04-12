@@ -191,7 +191,7 @@ attributed_time
 trn = pd.read_csv('__input/train.csv', usecols=['attributed_time', 'is_attributed'])
 
 # not used
-# download speed of each channel? ip? device?
+# download speed of each channel? ip? device? 
 
 
 '''

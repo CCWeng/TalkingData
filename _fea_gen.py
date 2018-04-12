@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 
 import feature_generation as fg
 import feature_analysis as fa
+import feature_generation_local as fg2
 
 
 f_trn = '__input/train.csv'
@@ -47,8 +48,15 @@ else:
 	trn = dat.loc[index_trn]
 	tst = dat.loc[index_tst]
 
+	y_tst = tst['is_attributed']
+	tst.drop('is_attributed', axis=1, inplace=True)
+
 	del dat
 	gc.collect()
+
+
+trn.sort_values(by='click_time', inplace=True)
+tst.sort_values(by='click_time', inplace=True)
 
 print '\nSize of train data :', trn.shape, '\nSize of test data :', tst.shape
 
@@ -95,7 +103,9 @@ trn, tst, oof_columns = fg.CreateOOFColumns(trn, tst, cate_columns, target=targe
 
 '''== smoothing features =='''
 
-trn, tst, smooth_columns = fg.CreateSmoothingColumns(trn, tst, cate_columns, target=target)
+# trn, tst, smooth_columns = fg.CreateSmoothingColumns(trn, tst, cate_columns, target=target)
+
+trn, tst, smooth_columns = fg.CreateCvSmoothingColumns(trn, tst, cate_columns, target=target)
 
 # trn.groupby('is_attributed')[smooth_columns].describe()
 
@@ -167,6 +177,7 @@ trn, tst, cate_freq_columns = fg.CreateCateFreqColumns(trn, tst, cate_columns)
 
 # trn, tst, stats_columns = fg.CreateStatsFeatures(trn, tst, observe_columns=[target], group_columns=cate_columns)
 
+trn, tst, stats_columns = fg.CreateTargetStatsFeatures(trn, tst, cate_columns, target, ts_split=True)
 
 # del_columns = list()
 # for c in stats_columns:
@@ -209,36 +220,47 @@ trn, tst, cate_freq_columns = fg.CreateCateFreqColumns(trn, tst, cate_columns)
 ## - do data exploration first
 
 
+'''== Create click columns =='''
+trn, tst, click_columns = fg2.CreateClicksColumns(trn, tst, ['app'])
+
+# z_statistics = pd.Series()
+# for c in click_columns:
+# 	z = fa.Ztest(trn, 'is_attributed', c)
+# 	z_statistics[c] = z
+
+# z_statistics.sort_values(ascending=False, inplace=True)
+
+
+
+
 ## Define total columns in utility
+
 
 use_columns = list()
 use_columns += oof_columns
 use_columns += smooth_columns
-use_columns += cate_freq_columns
+# use_columns += cate_freq_columns
 # use_columns += stats_columns
+use_columns += stats_columns
+use_columns += click_columns
 
 
 
-# tmp
-
-from sklearn.linear_model import LogisiticRegression
-from sklearn.model_selection import cross_val_score
 
 
-model_lr = LogisiticRegression(penalty='l1')
 
-cv_res = cross_val_score(model_lr, trn[use_columns], trn[target], cv=5, scoring='roc_auc')
-print 'Results of cross-validation :', cv_res.mean(), cv_res.std()
 
-model_lr.fit(trn[use_columns], trn[target])
-pp = model.predict_proba(tst[use_columns])[:, 1]
 
-tst['is_attributed'] = pp
 
-d_out = '__output/'
-output_columns = ['click_id', 'is_attributed']
 
-tst.to_csv(d_output+'lr_180405_01.csv', columns = output_columns, index=False)
+
+
+
+
+
+
+
+
 
 
 

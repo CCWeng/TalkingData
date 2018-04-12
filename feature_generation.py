@@ -11,6 +11,7 @@ from itertools import combinations
 from sklearn.model_selection import cross_val_predict
 from sklearn.model_selection import KFold
 from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import TimeSeriesSplit
 
 from sklearn.preprocessing import PolynomialFeatures, FunctionTransformer
 
@@ -31,6 +32,7 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 
 import time
+
 
 
 
@@ -758,6 +760,56 @@ def CreateSmoothingColumns(df_trn, df_tst, in_columns, target, min_samples_leaf=
 
 
 
+def CreateCvSmoothingColumns(df_trn, df_tst, in_columns, target, 
+							min_samples_leaf=200, smoothing=10, noise_level=0, verbose=True, 
+							ts_split=False, n_splits=5):
+	new_columns = list()
+	tgt_c = target
+
+	if ts_split:
+		cv = TimeSeriesSplit(n_splits=n_splits)
+	else:
+		cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=15)
+
+
+	N = len(in_columns)
+	for i, old_c in enumerate(in_columns):
+		if verbose:
+			sys.stdout.write("\r : smooth feature for %s (%d/%d)                  " % (old_c, i+1, N))
+			sys.stdout.flush()
+
+		new_c = "smooth_%s@%s" % (tgt_c, old_c)
+		df_trn[new_c] = np.nan
+		df_tst[new_c] = np.nan
+
+		for lrn_idx, prd_idx in cv.split(df_trn[old_c], df_trn[target]):
+			lrn_idx = df_trn.index[lrn_idx]
+			prd_idx = df_trn.index[prd_idx]
+
+			_, df_trn.loc[prd_idx, new_c] = smoothing_encode(
+				trn_series=df_trn.loc[lrn_idx, old_c],
+				tst_series=df_trn.loc[prd_idx, old_c],
+				target=df_trn.loc[lrn_idx, tgt_c],
+				min_samples_leaf=min_samples_leaf,
+				smoothing=smoothing,
+				noise_level=noise_level)
+
+		_, df_tst[new_c] = smoothing_encode(
+			trn_series=df_trn[old_c],
+			tst_series=df_tst[old_c],
+			target=df_trn[tgt_c],
+			min_samples_leaf=min_samples_leaf,
+			smoothing=smoothing,
+			noise_level=noise_level)
+
+		new_columns.append(new_c)
+
+	if verbose:
+		sys.stdout.write('\n')
+
+	return df_trn, df_tst, new_columns
+
+
 
 def week_of_quarter(dt):
 	year = dt.year
@@ -1244,8 +1296,7 @@ def CreateOOFColumns(df_train, df_test, categorical_columns, target=target, cv=N
 	tgt_c = target
 
 	if cv is None:
-		n_folds = 5
-		cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=15) 
+		cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=15) 
 
 	N = len(categorical_columns)
 	new_columns = list()
@@ -1772,6 +1823,99 @@ def ImputeNanFeatures(df_train, df_test, in_columns, verbose=False):
 
 
 
+def CreateTargetStatsFeatures(df_trn, df_tst, cate_columns, target, ts_split=False):
+	total_stats_columns = list()
+
+	if ts_split:
+		cv = TimeSeriesSplit(n_splits=5)
+	else:
+		cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=15)
+
+	N = len(cate_columns)
+	for i, gc in enumerate(cate_columns):
+		msg = "\rCreate target statistics for %s (%d/%d)          " % (gc, i+1, N)
+		sys.stdout.write(msg)
+		sys.stdout.flush()
+
+		for lrn_idx, prd_idx in cv.split(df_trn[gc], df_trn[target]):
+			lrn_idx = df_trn.index[lrn_idx]
+			prd_idx = df_trn.index[prd_idx]
+	
+			df_stats, stats_columns = get_tgt_stats(df_trn.loc[lrn_idx, [gc, target]], df_trn.loc[prd_idx, [gc]], gc, target)				
+			for c in stats_columns:
+				if c not in df_trn:
+					df_trn[c] = np.nan
+
+			df_trn.update(df_stats)
+
+		df_stats, stats_columns = get_tgt_stats(df_trn[[gc, target]], df_tst[[gc]], gc, target)
+		for c in stats_columns:
+			if c in df_tst:
+				df_tst.drop(c, axis=1, inplace=True)
+
+		df_tst = pd.concat([df_tst, df_stats], axis=1)
+
+		total_stats_columns += stats_columns
+		
+	sys.stdout.write("\n")
+
+	for c in total_stats_columns:
+		trn_has_null = (df_trn[c].isnull().sum() > 0)
+		tst_has_null = (df_tst[c].isnull().sum() > 0)
+
+		if trn_has_null or tst_has_null:
+			fval = df_trn[c].mean()
+			if trn_has_null:
+				df_trn[c] = df_trn[c].fillna(fval)
+			if tst_has_null:
+				df_tst[c] = df_tst[c].fillna(fval)
+
+	return df_trn, df_tst, total_stats_columns
+
+
+
+def get_tgt_stats(df_train, df_test, group_column, target):
+
+	grouped = df_train[[group_column, target]].groupby(group_column)
+
+	the_size = pd.DataFrame(grouped.size()).reset_index()
+	the_size.columns = [group_column, '%s-cnt@%s' % (target, group_column)]
+
+	the_mean = pd.DataFrame(grouped.mean()).reset_index()
+	the_mean.columns = [group_column, '%s-mean@%s' % (target, group_column)]
+
+	the_std = pd.DataFrame(grouped.std()).reset_index().fillna(0)
+	the_std.columns = [group_column, '%s-std@%s' % (target, group_column)]
+
+	the_median = pd.DataFrame(grouped.median()).reset_index()
+	the_median.columns = [group_column, '%s-med@%s' % (target, group_column)]
+
+	the_stats = pd.merge(the_size, the_mean)
+	the_stats = pd.merge(the_stats, the_std)
+	the_stats = pd.merge(the_stats, the_median)
+
+	# the_max = pd.DataFrame(grouped.max()).reset_index()
+	# the_max.columns = [group_column, '%s-max@%s' % (target, group_column)]
+
+	# the_min = pd.DataFrame(grouped.min()).reset_index()
+	# the_min.columns = [group_column, '%s-min@%s' % (target, group_column)]
+
+	# the_stats = pd.merge(the_stats, the_max)
+	# the_stats = pd.merge(the_stats, the_min)
+
+	test_index = df_test.index
+	df_test = pd.merge(df_test, the_stats, how='left', on=group_column)
+	df_test.index = test_index
+	
+	stats_columns = the_stats.columns.tolist()
+	stats_columns.remove(group_column)
+
+	return df_test[stats_columns], stats_columns
+
+
+
+
+
 def CreateStatsFeatures(df_train, df_test, observe_columns, group_columns):
 
 	total_stats_mat_tr = np.array([])
@@ -1808,6 +1952,10 @@ def CreateStatsFeatures(df_train, df_test, observe_columns, group_columns):
 	df_test[total_stats_columns] = df_test[total_stats_columns].fillna(0)
 
 	return df_train, df_test, total_stats_columns
+
+
+
+
 
 
 
@@ -1856,7 +2004,17 @@ def get_stats(df_train, df_test, obsv_column, group_column):
 	# the_stats = pd.merge(the_stats, the_max)
 	# the_stats = pd.merge(the_stats, the_min)
 
+	
+
 	all_df = pd.merge(all_df, the_stats, how='left', on=group_column)
+
+	stats_columns = the_stats.columns.tolist()
+	stats_columns.remove(group_column)
+
+	for c in stats_columns:
+		if all_df[c].isnull().sum():
+			fval = all_df[c].mean()
+			all_df[c] = all_df[c].fillna(fval)
 
 	selected_train = all_df[all_df['train'] == 1]
 	selected_test = all_df[all_df['train'] == 0]
@@ -1865,7 +2023,7 @@ def get_stats(df_train, df_test, obsv_column, group_column):
 	selected_train.drop([obsv_column, group_column, 'row_id', 'train'], axis=1, inplace=True)
 	selected_test.drop([obsv_column, group_column, 'row_id', 'train'], axis=1, inplace=True)
 
-	stats_columns = [str(col) for col in selected_train.columns]
+	# stats_columns = [str(col) for col in selected_train.columns]
 
 	return np.array(selected_train), np.array(selected_test), stats_columns
 

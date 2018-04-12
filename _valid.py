@@ -254,8 +254,13 @@ from sklearn.metrics import accuracy_score
 
 y = trn[target]
 
-columns1 = smooth_columns
-columns2 = smooth_columns + ['app_freq']
+# columns1 = smooth_columns
+# columns2 = smooth_columns + ['app_freq']
+# columns3 = use_columns
+columns1 = oof_columns
+columns2 = smooth_columns
+columns3 = stats_columns
+columns4 = tgt_stats_columns
 
 
 
@@ -361,43 +366,55 @@ plt.show()
 columns3 = total_columns
 columns3 = use_columns
 
-cv_res1 = cross_val_score(model1, trn[columns1], trn[target], cv=5, scoring='roc_auc')
-cv_res2 = cross_val_score(model2, trn[columns2], trn[target], cv=5, scoring='roc_auc')
-cv_res3 = cross_val_score(model3, trn[columns3], trn[target], cv=5, scoring='roc_auc')
+## == 
+
+columns1 = oof_columns
+columns2 = smooth_columns
+columns3 = stats_columns
+columns4 = tgt_stats_columns
+
+model1 = LogisticRegression(penalty='l1')
+model2 = LogisticRegression(penalty='l1')
+model3 = LogisticRegression(penalty='l1')
+model4 = LogisticRegression(penalty='l1')
+
 
 print cv_res1.mean(), cv_res1.std()
-print cv_res2.mean(), cv_res2.std()
-print cv_res3.mean(), cv_res3.std()
 
-model1.fit(trn[columns1], trn[target])
-model2.fit(trn[columns2], trn[target])
-model3.fit(trn[columns3], trn[target])
 
-pp_trn1 = model1.predict_proba(trn[columns1])[:, 1]
-pp_trn2 = model2.predict_proba(trn[columns2])[:, 1]
-pp_trn3 = model3.predict_proba(trn[columns3])[:, 1]
-
+model = LogisticRegression(penalty='l1')
 y_trn = trn[target]
 
-auc_trn1 = roc_auc_score(y_trn, pp_trn1)
-auc_trn2 = roc_auc_score(y_trn, pp_trn2)
-auc_trn3 = roc_auc_score(y_trn, pp_trn3)
 
-print auc_trn1, auc_trn2, auc_trn3
-
-pp_tst1 = model1.predict_proba(tst[columns1])[:, 1]
-pp_tst2 = model2.predict_proba(tst[columns2])[:, 1]
-pp_tst3 = model3.predict_proba(tst[columns3])[:, 1]
-
-y_tst = tst[target]
-
-auc_tst1 = roc_auc_score(y_tst, pp_tst1)
-auc_tst2 = roc_auc_score(y_tst, pp_tst2)
-auc_tst3 = roc_auc_score(y_tst, pp_tst3)
-
-print auc_tst1, auc_tst2, auc_tst3
+use_columns = list()
+use_columns += oof_columns
+use_columns += smooth_columns
+# use_columns += cate_freq_columns
+# use_columns += stats_columns
+use_columns += tgt_stats_columns
 
 
+col_dict = list()
+col_dict.append(('oof', oof_columns))
+col_dict.append(('smooth', smooth_columns))
+col_dict.append(('stats', stats_columns))
+col_dict.append(('tgt_stats', tgt_stats_columns))
+col_dict.append(('all', use_columns))
+
+model = LogisticRegression(penalty='l1')
+for name, columns in col_dict:
+	cv_res = cross_val_score(model, trn[columns], trn[target], cv=5, scoring='roc_auc')
+	# msg1 = "(%.3f, %.3f)" % (cv_res.mean(), cv_res.std())
+
+	model.fit(trn[columns], trn[target])
+	pp_trn = model.predict_proba(trn[columns])[:, 1]
+	pp_tst = model.predict_proba(tst[columns])[:, 1]
+
+	auc_trn = roc_auc_score(y_trn, pp_trn)
+	auc_tst = roc_auc_score(y_tst, pp_tst)
+
+	# print name, ': cv =', msg1, ", train =", auc_trn, ', test =', auc_tst
+	print '{:>10}: cv = {}, train = {}, test = {}'.format(name, (cv_res.mean(), cv_res.std()), auc_trn, auc_tst)
 
 
 
