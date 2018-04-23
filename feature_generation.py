@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import sys
+import gc
 
 import data_process as dp
 import feature_analysis as fa
@@ -32,6 +33,100 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 
 import time
+
+
+
+from sklearn.preprocessing import LabelEncoder
+
+
+from pandas.core.categorical import Categorical
+from scipy.sparse import csr_matrix, hstack
+
+
+
+
+def CreateSparseDummyColumns(trn, tst, cate_columns):
+	"""Returns sparse OHE matrix for the column of the dataframe"""
+	df = trn[cate_columns].append(tst[cate_columns])
+	
+	N = df.shape[0]
+	row_numbers = np.arange(N, dtype=np.int)
+	ones = np.ones((N,))
+		
+	matrices = list()
+	all_column_names = list()
+	for c in cate_columns:
+		categories = Categorical(df[c])
+		column_names = np.array(["%s_%d" % (c, i) for i in range(len(categories.categories))])
+		mat = csr_matrix((ones, (row_numbers, categories.codes)))
+		
+		matrices.append(mat)
+		all_column_names.append(column_names)
+
+	mat_all = hstack(matrices, format="csr")
+	column_names = np.concatenate(all_column_names)
+
+	n_trn = len(trn)
+	mat_trn = mat_all[:n_trn, :]
+	mat_tst = mat_all[n_trn:, :]
+	
+	return mat_trn, mat_tst, column_names
+
+
+
+
+
+
+
+def Create2WayCateColumns(trn, tst, pairs):
+	trn['train'] = 1
+	tst['train'] = 0
+
+	trn['row_id'] = range(len(trn))
+	tst['row_id'] = range(len(tst))
+
+	use_columns = set()
+	for pair in pairs:
+		use_columns = use_columns.union(pair)
+
+	use_columns = list(use_columns)
+	use_columns += ['train', 'row_id']
+
+	df_all = trn[use_columns].append(tst[use_columns])
+
+	le = LabelEncoder()
+
+	new_columns = list()
+	for wc1, wc2 in pairs:
+		new_c = "%s&%s" % (wc1, wc2)
+		new_columns.append(new_c)
+
+		df_all[new_c] = df_all[wc1].astype(str) + '_' + df_all[wc2].astype(str)
+		df_all[new_c] = le.fit_transform(df_all[new_c]).astype('uint16')
+
+
+	trn_new = df_all.loc[df_all.train==1].sort_values(by='row_id')
+	tst_new = df_all.loc[df_all.train==0].sort_values(by='row_id')
+
+	for c in new_columns:
+		if c in trn:
+			trn.drop(c, axis=1, inplace=True)
+		if c in tst:
+			tst.drop(c, axis=1, inplace=True)
+
+	trn = pd.concat([trn, trn_new[new_columns]], axis=1)
+	tst = pd.concat([tst, tst_new[new_columns]], axis=1)
+
+	del trn_new, tst_new
+
+	trn.drop(['train', 'row_id'], axis=1, inplace=True)
+	tst.drop(['train', 'row_id'], axis=1, inplace=True)
+
+	gc.collect()
+
+	return trn, tst, new_columns
+
+
 
 
 
@@ -1387,6 +1482,7 @@ def RemoveColumns(columns, remove_columns):
 
 
 def CreateDummyColumns(df_train, df_test, columns):
+	total_card
 
 	df_train['train'] = 1
 	df_test['train'] = 0

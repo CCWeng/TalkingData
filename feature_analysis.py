@@ -47,6 +47,31 @@ target = 'toxic'
 import unicodedata
 
 
+def compute_z_stats(df, in_columns, target):
+	z_statistics = pd.Series()
+	for c in in_columns:
+		z = Ztest(df, target, c)
+		z_statistics[c] = z
+
+	z_statistics.sort_values(ascending=False, inplace=True)
+
+	return z_statistics
+
+
+def PlotAppTrend(df, apps):
+	for aid in apps:
+		click_trend = df.loc[df.app == aid].groupby(['click_day', 'click_hour']).size()
+		attr_trend = df.loc[df.app == aid].groupby(['click_day', 'click_hour'])['is_attributed'].sum()
+
+		trend = pd.concat([click_trend, attr_trend], axis=1)
+		trend.columns = ['clicks', 'attributes']
+
+		plt.plot(trend.attributes)
+		plt.title("app : %d (%d)" % (aid, trend.attributes.sum()))
+		plt.show()
+
+	return 
+
 
 
 

@@ -13,8 +13,8 @@ import feature_generation_local as fg2
 f_trn = '__input/train.csv'
 f_tst = '__input/test.csv'
 
-trn_cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time', 'is_attributed']
-tst_cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time']
+trn_cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time', 'is_attributed', 'attributed_time']
+tst_cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time', 'click_id', 'attributed_time']
 
 dtypes = {
     'ip'            : 'uint32',
@@ -26,7 +26,7 @@ dtypes = {
     'click_id'      : 'uint32'
 }
 
-resize_data = False
+resize_data = True
 
 if not resize_data:
 	n_skiprows = 110000000
@@ -76,9 +76,11 @@ dumm_columns = list()
 '''== hour of click time =='''
 
 click_time = pd.to_datetime(trn.click_time)
+trn['click_day'] = click_time.dt.day
 trn['click_hour'] = click_time.dt.hour
 
 click_time = pd.to_datetime(tst.click_time)
+tst['click_day'] = click_time.dt.day
 tst['click_hour'] = click_time.dt.hour
 
 del click_time
@@ -232,36 +234,62 @@ trn, tst, click_columns = fg2.CreateClicksColumns(trn, tst, ['app'])
 
 
 
+'''=== Create 2-way categorical columns =='''
+pairs = [('ip', 'app'), ('ip', 'click_hour'), ('app', 'click_hour')]
+trn, tst, cate_2way_columns = fg.Create2WayCateColumns(trn, tst, pairs)
+
+
+'''=== Create create count columns ==='''
+trn, tst, clkcnt_columns, clkcnt_inv_columns = fg2.CreateClickCntColumns(trn, tst, cate_columns)
+
 
 ## Define total columns in utility
 
 
 use_columns = list()
-use_columns += oof_columns
-use_columns += smooth_columns
+# use_columns += oof_columns
+# use_columns += smooth_columns
 # use_columns += cate_freq_columns
 # use_columns += stats_columns
-use_columns += stats_columns
-use_columns += click_columns
+# use_columns += stats_columns
+# use_columns += click_columns
+use_columns += cate_columns
+use_columns += cate_2way_columns
+use_columns += clkcnt_columns
+use_columns += clkcnt_inv_columns
 
 
 
 
 
+# == 
+
+
+groupbys = list()
+groupbys.append(['ip', 'app'])
+groupbys.append(['ip', 'click_day'])
+groupbys.append(['ip', 'click_day', 'click_hour'])
+groupbys.append(['app', 'click_day', 'click_hour'])
+
+trn, tst, clickcum_columns = fg2.CreateClickCumColumns(trn, tst, groupbys)
+
+trn, tst, attrcum_columns = fg2.CreateAttrCumColumns(trn, tst, groupbys, use_noise=True)
 
 
 
 
 
+# trn, tst, clkcnt_columns_multi, clkcnt_inv_columns_multi = fg2.CreateClickCntColumns_Multi(trn, tst, groupbys)
+
+
+# trn, tst, dumm_columns = fg.CreateDummyColumns(trn, tst, cate_columns)
+# trn, tst, dumm_2way_columns = fg.CreateDummyColumns(trn, tst, cate_2way_columns)
 
 
 
 
-
-
-
-
-
+# dumm_trn, dumm_tst, dumm_columns = fg.CreateSparseDummyColumns(trn, tst, cate_columns)
+# dumm_2way_trn, dumm_2way_tst, dumm_2way_columns = fg.CreateSparseDummyColumns(trn, tst, cate_2way_columns)
 
 
 

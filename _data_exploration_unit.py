@@ -255,6 +255,127 @@ trn['time_interval'] = trn.hour.apply(get_time_interval)
 # tendency by hour
 
 
+from scipy.sparse import csr_matrix
+
+X_trn = csr_matrix(trn[use_columns].values, dtype=float)
+y_trn = csr_matrix(trn[target].values, dtype=float)
+
+X_tst = csr_matrix(tst[use_columns].values, dtype=float)
+
+dm_trn = xgb.DMatrix(X_trn, y_trn, feature_names=use_columns)
+# dm_trn = xgb.DMatrix(X_trn, y_trn, feature_names=use_columns)
+dm_trn.save_binary('trn.bin')
+
+dm_tst = xgb.DMatrix(X_tst, feature_names=use_columns)
+dm_tst.save_binary('tst.bin')
+
+
+trn.to_csv('__output/trn22.csv')
+
+trn2 = pd.read_csv('__output/trn22.csv', index_col='Unnamed: 0')
+
+
+
+'''
+app trendency
+'''
+
+apps = [19, 35, 10, 29, 5, 9, 45, 3, 18, 72, 2, 11, 8, 66, 39, 83, 20, 14, 15, 107]
+
+fa.PlotAppTrend(trn, apps)
+
+
+trn2 = pd.read_csv(f_trn, dtype=dtypes, usecols=['app', 'is_attributed'])
+tst2 = pd.read_csv(f_tst, dtype=dtypes, usecols=['app'])
+
+
+
+from sklearn.feature_selection import chi2
+
+tmp_columns = cate_columns + ['app&click_hour']
+chi2_values, p_values = chi2(trn[tmp_columns], trn[target])
+
+chi2_values = pd.Series()
+
+for c in cate_columns + ['app&click_hour']:
+	z = fa.Ztest(trn, 'is_attributed', c)
+	z_statistics[c] = z
+
+
+#====
+
+import xgboost as xgb
+from xgboost import XGBClassifier
+
+
+tst[target] = y_tst
+
+xgb4 = XGBClassifier(
+	learning_rate =0.1,
+	n_estimators=124,
+	max_depth=7,
+	min_child_weight=1,
+	gamma=0.0,
+	subsample=0.8,
+	colsample_bytree=0.8,
+	reg_alpha=0.05,
+	objective= 'binary:logistic',
+	nthread=12,
+	scale_pos_weight=1,
+	seed=27 )
+
+
+params4 = xgb4.get_params()
+params4['eval_metric'] = 'auc' # 0.954
+
+
+use_columns = list()
+# use_columns += oof_columns
+# use_columns += smooth_columns
+# use_columns += cate_freq_columns
+# use_columns += stats_columns
+# use_columns += click_columns
+# use_columns += cate_columns
+use_columns += cate_2way_columns
+
+# use_columns += clickcum_columns
+# use_columns += attrcum_columns
+
+# use_columns += clkcnt_columns
+# use_columns += clkcnt_inv_columns
+
+# use_columns += clkcnt_columns_multi
+# use_columns += clkcnt_inv_columns_multi
+
+
+dtrain = xgb.DMatrix(trn[use_columns], trn[target])
+dvalid = xgb.DMatrix(tst[use_columns], tst[target])
+
+dtrain = xgb.DMatrix(dumm_trn, trn[target], feature_names=dumm_columns)
+dvalid = xgb.DMatrix(dumm_tst, tst[target], feature_names=dumm_columns)
+
+dtrain = xgb.DMatrix(dumm_2way_trn, trn[target], feature_names=dumm_2way_columns)
+dvalid = xgb.DMatrix(dumm_2way_tst, tst[target], feature_names=dumm_2way_columns)
+
+
+watchlist = [(dtrain, 'train'), (dvalid, 'valid')]
+
+xgb4 = xgb.train(params4, dtrain, 2000, watchlist, early_stopping_rounds=200, maximize=True, verbose_eval=1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

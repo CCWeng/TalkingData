@@ -427,7 +427,7 @@ ml.xgbfit(xgb4, trn, tst, use_columns, printFeatureImportance=False, target=targ
 
 params4 = xgb4.get_params()
 params4['eval_metric'] = 'auc' # 0.954
-params4['learning_rate'] = 0.3 # 0.952
+params4['learning_rate'] = 0.1 # 0.952
 params4['grow_policy'] = 'lossguide' 
 params4['max_leaves'] = 1400
 params4['alpha'] = 4
@@ -462,7 +462,8 @@ dvalid = xgb.DMatrix(X_tst, y_tst)
 gc.collect()
 
 watchlist = [(dtrain, 'train'), (dvalid, 'valid')]
-model = xgb.train(params5, dtrain, 1000, watchlist, maximize=True, early_stopping_rounds = 200, verbose_eval=1)
+model = xgb.train(params5, dtrain, 5000, watchlist, maximize=True, early_stopping_rounds = 500, verbose_eval=1)
+pp = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
 
 
 
