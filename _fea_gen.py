@@ -26,7 +26,7 @@ dtypes = {
     'click_id'      : 'uint32'
 }
 
-resize_data = True
+resize_data = False
 
 if not resize_data:
 	n_skiprows = 110000000
@@ -254,9 +254,9 @@ use_columns = list()
 # use_columns += stats_columns
 # use_columns += click_columns
 use_columns += cate_columns
-use_columns += cate_2way_columns
+# use_columns += cate_2way_columns
 use_columns += clkcnt_columns
-use_columns += clkcnt_inv_columns
+# use_columns += clkcnt_inv_columns
 
 
 
