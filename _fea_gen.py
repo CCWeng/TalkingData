@@ -14,7 +14,7 @@ f_trn = '__input/train.csv'
 f_tst = '__input/test.csv'
 
 trn_cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time', 'is_attributed', 'attributed_time']
-tst_cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time', 'click_id', 'attributed_time']
+tst_cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time', 'click_id']
 
 dtypes = {
     'ip'            : 'uint32',
