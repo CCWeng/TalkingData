@@ -271,9 +271,9 @@ groupbys.append(['ip', 'click_day'])
 groupbys.append(['ip', 'click_day', 'click_hour'])
 groupbys.append(['app', 'click_day', 'click_hour'])
 
-trn, tst, clickcum_columns = fg2.CreateClickCumColumns(trn, tst, groupbys)
+# trn, tst, clickcum_columns = fg2.CreateClickCumColumns(trn, tst, groupbys)
 
-trn, tst, attrcum_columns = fg2.CreateAttrCumColumns(trn, tst, groupbys, use_noise=True)
+# trn, tst, attrcum_columns = fg2.CreateAttrCumColumns(trn, tst, groupbys, use_noise=True)
 
 
 
@@ -290,6 +290,17 @@ trn, tst, attrcum_columns = fg2.CreateAttrCumColumns(trn, tst, groupbys, use_noi
 
 # dumm_trn, dumm_tst, dumm_columns = fg.CreateSparseDummyColumns(trn, tst, cate_columns)
 # dumm_2way_trn, dumm_2way_tst, dumm_2way_columns = fg.CreateSparseDummyColumns(trn, tst, cate_2way_columns)
+
+
+# trn, tst, timediff_columns = fg2.CreateTimeDiffColumns(trn, tst, ['ip', 'app'])
+
+
+
+
+
+
+
+
 
 
 

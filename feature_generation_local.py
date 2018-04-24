@@ -4,6 +4,49 @@ import sys
 import gc
 
 
+def CreateTimeDiffColumns(trn, tst, groupbys):
+	index = trn.loc[trn.is_attributed == 1].index
+	t1 = pd.to_datetime(trn.loc[index, 'click_time'])
+	t2 = pd.to_datetime(trn.loc[index, 'attributed_time'])
+
+	trn['time_diff'] = np.nan
+	trn.loc[index, 'time_diff'] = t2.values - t1.values
+
+	trn['sec_diff'] = np.nan
+	trn.loc[index, 'sec_diff'] = trn.loc[index, 'time_diff'].apply(lambda x: x.seconds)
+
+	trn['min_diff'] = np.nan
+	trn.loc[index, 'min_diff'] = (trn.loc[index, 'sec_diff'] / 60).round()
+
+
+	total_new_columns = list()
+	for c in groupbys:
+		sys.stdout.write("Create time difference for %s ... " % c)
+		sys.stdout.flush()
+
+		new_cols = [c+'_mindiff', c+'_secdiff']
+		total_new_columns += new_cols
+
+		g1 = trn.loc[index].groupby(c)['min_diff'].mean()
+		g2 = trn.loc[index].groupby(c)['sec_diff'].mean()
+
+		g = pd.concat([g1, g2], axis=1)
+		g.columns = new_cols
+
+		trn = trn.join(g, on=c, how='left')
+		tst = tst.join(g, on=c, how='left')
+
+	trn.drop(['time_diff', 'min_diff', 'sec_diff'], axis=1, inplace=True)
+	gc.collect()
+	
+	return trn, tst, total_new_columns
+
+
+
+
+
+
+
 def CreateClickCntColumns_Multi(trn, tst, groupbys):
 	print "Compute click counts :"
 
