@@ -38,7 +38,7 @@ def CreateTimeDiffColumns(trn, tst, groupbys):
 
 	trn.drop(['time_diff', 'min_diff', 'sec_diff'], axis=1, inplace=True)
 	gc.collect()
-	
+
 	return trn, tst, total_new_columns
 
 

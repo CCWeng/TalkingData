@@ -209,11 +209,15 @@ click_time = pd.to_datetime(trn.click_time)
 # trn['year'] = click_time.dt.year # only 2017
 # trn['quarter'] = click_time.dt.quarter
 # trn['month'] = click_time.dt.month
-trn['day'] = click_time.dt.day
+# trn['day'] = click_time.dt.day
 # trn['week'] = click_time.dt.week
 trn['dow'] = click_time.dt.dayofweek
 # trn['doy'] = click_time.dt.dayofyear
+trn['doy'] = click_time.dt.dayofyear
 
+click_time = pd.to_datetime(tst.click_time)
+tst['dow'] = click_time.dt.dayofweek
+tst['doy'] = click_time.dt.dayofyear
 
 grp = trn.groupby(['day', 'is_attributed']).size()
 rat = grp.loc[:, 1, :].astype(float) / grp.loc[:, 0, :]
@@ -335,27 +339,29 @@ use_columns = list()
 # use_columns += cate_freq_columns
 # use_columns += stats_columns
 # use_columns += click_columns
-# use_columns += cate_columns
-use_columns += cate_2way_columns
+use_columns += cate_columns
+# use_columns += cate_2way_columns
 
 # use_columns += clickcum_columns
 # use_columns += attrcum_columns
 
-# use_columns += clkcnt_columns
+use_columns += clkcnt_columns
 # use_columns += clkcnt_inv_columns
 
 # use_columns += clkcnt_columns_multi
 # use_columns += clkcnt_inv_columns_multi
+# use_columns += timediff_columns
 
+use_columns += ['app_mindiff', 'app_secdiff']
 
 dtrain = xgb.DMatrix(trn[use_columns], trn[target])
 dvalid = xgb.DMatrix(tst[use_columns], tst[target])
 
-dtrain = xgb.DMatrix(dumm_trn, trn[target], feature_names=dumm_columns)
-dvalid = xgb.DMatrix(dumm_tst, tst[target], feature_names=dumm_columns)
+# dtrain = xgb.DMatrix(dumm_trn, trn[target], feature_names=dumm_columns)
+# dvalid = xgb.DMatrix(dumm_tst, tst[target], feature_names=dumm_columns)
 
-dtrain = xgb.DMatrix(dumm_2way_trn, trn[target], feature_names=dumm_2way_columns)
-dvalid = xgb.DMatrix(dumm_2way_tst, tst[target], feature_names=dumm_2way_columns)
+# dtrain = xgb.DMatrix(dumm_2way_trn, trn[target], feature_names=dumm_2way_columns)
+# dvalid = xgb.DMatrix(dumm_2way_tst, tst[target], feature_names=dumm_2way_columns)
 
 
 watchlist = [(dtrain, 'train'), (dvalid, 'valid')]

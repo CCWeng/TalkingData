@@ -64,7 +64,7 @@ gc.collect()
 dtrain = xgb.DMatrix(trn[use_columns], trn[target])
 
 watchlist = [(dtrain, 'train')]
-xgb4 = xgb.train(params4, dtrain, 200, watchlist, maximize=True, verbose_eval=1)
+xgb = xgb.train(params5, dtrain, 845, watchlist, maximize=True, verbose_eval=1)
 
 del dtrain
 gc.collect()
@@ -91,10 +91,13 @@ del dtrain, dvalid
 gc.collect()
 
 dtest = xgb.DMatrix(tst[use_columns])
-pp = xgb445.predict(dtest, ntree_limit=xgb445.best_ntree_limit)
+pp = xgb555.predict(dtest, ntree_limit=xgb555.best_ntree_limit)
 # pp = model.predict( ntree_limit=20)
 tst['is_attributed'] = pp
-tst.to_csv('__output/xgb_180415_01.csv', columns = ['click_id', 'is_attributed'], index=False)
+tst.to_csv('__output/xgb_180425_02.csv', columns = ['click_id', 'is_attributed'], index=False)
+
+
+## 845
 
 
 del dtest
@@ -109,7 +112,7 @@ xgb444 = xgb.train(params4, dtrain, 1000, watchlist, maximize=True, early_stoppi
 
 params5 = {
 	'learning_rate': 0.3,
-	'n_estimators': 28,
+	'n_estimators': 845, #28,
 	'tree_method': "auto",
 	'grow_policy': "lossguide",
 	'max_leaves': 1400,  

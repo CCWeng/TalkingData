@@ -267,9 +267,11 @@ use_columns += clkcnt_columns
 
 groupbys = list()
 groupbys.append(['ip', 'app'])
-groupbys.append(['ip', 'click_day'])
+# groupbys.append(['ip', 'click_day'])
 groupbys.append(['ip', 'click_day', 'click_hour'])
-groupbys.append(['app', 'click_day', 'click_hour'])
+# groupbys.append(['app', 'click_day', 'click_hour'])
+groupbys.append(['ip', 'app', 'os'])
+
 
 # trn, tst, clickcum_columns = fg2.CreateClickCumColumns(trn, tst, groupbys)
 
@@ -277,9 +279,7 @@ groupbys.append(['app', 'click_day', 'click_hour'])
 
 
 
-
-
-# trn, tst, clkcnt_columns_multi, clkcnt_inv_columns_multi = fg2.CreateClickCntColumns_Multi(trn, tst, groupbys)
+trn, tst, clkcnt_columns_multi, clkcnt_inv_columns_multi = fg2.CreateClickCntColumns_Multi(trn, tst, groupbys)
 
 
 # trn, tst, dumm_columns = fg.CreateDummyColumns(trn, tst, cate_columns)
