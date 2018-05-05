@@ -184,10 +184,16 @@ params = {
     'scale_pos_weight': 99.76
 }
 
-dtrain = lgb.Dataset(train[predictors].values, label=train[target].values,
-                      feature_name=predictors,
-                      categorical_feature=categorical
-                      )
+# dtrain = lgb.Dataset(train[predictors].values, label=train[target].values,
+#                       feature_name=predictors,
+#                       categorical_feature=categorical
+#                       )
+
+
+dtrain = xgb.DMatrix(trn[predictors], trn[target])
+watchlist = [(dtrain, 'train')]
+
+
 del train
 gc.collect()
 print('Datasets ready.')
@@ -205,15 +211,18 @@ if run_cv:
     print('CV complete. Optimum boost rounds = {}'.format(OPT_BOOST_ROUNDS))
 
 print('Training model...')
-lgb_model = lgb.train(params=params, train_set=dtrain, num_boost_round=OPT_BOOST_ROUNDS,
-                      categorical_feature=categorical)
+# lgb_model = lgb.train(params=params, train_set=dtrain, num_boost_round=OPT_BOOST_ROUNDS,
+#                       categorical_feature=categorical)
+
+xgb_model = xgb.train(params5, dtrain, 3000, watchlist, maximize=True, early_stopping_rounds = 200, verbose_eval=1)
+
 print('Model trained.')
 
 # Feature names:
-print('Feature names:', lgb_model.feature_name())
+# print('Feature names:', lgb_model.feature_name())
 
 # Feature importances:
-print('Feature importances:', list(lgb_model.feature_importance()))
+# print('Feature importances:', list(lgb_model.feature_importance()))
 
 """
 4. Infer and submit
@@ -231,9 +240,10 @@ print("Preparing data for submission...")
 submit = pd.read_csv(path_test, dtype='int', usecols=['click_id'])
 
 print("Predicting the submission data...")
-submit['is_attributed'] = lgb_model.predict(test[predictors], num_iteration=lgb_model.best_iteration)
+# submit['is_attributed'] = lgb_model.predict(test[predictors], num_iteration=lgb_model.best_iteration)
+submit['is_attributed'] = xgb_model.predict(test[predictors], ntree_limit=xgb5.best_ntree_limit)
 
 print("Writing the submission data into a csv file...")
-submit.to_csv('__output/lgb_ref_0505_02.csv', index=False)
+submit.to_csv('__output/xgb_ref_0505_03.csv', index=False)
 
 print("Writing complete.")
