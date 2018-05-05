@@ -24,6 +24,8 @@ What's new:
       parameters are set below.
 """
 
+print trn.shape
+
 import os
 import pandas as pd
 import numpy as np
