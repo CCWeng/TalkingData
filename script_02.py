@@ -42,8 +42,10 @@ OPT_BOOST_ROUNDS = 349  # Found through CV on my machine to save Kaggle server t
 1. Load data
 """
 
-path_train = os.path.join(os.pardir, 'input', 'train.csv')
-path_test = os.path.join(os.pardir, 'input', 'test.csv')
+path_train = '__input/train.csv'
+path_test = '__input/test.csv'
+# path_train = os.path.join(os.pardir, 'input', 'train.csv')
+# path_test = os.path.join(os.pardir, 'input', 'test.csv')
 
 train_cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time', 'is_attributed']
 test_cols = ['ip', 'app', 'device', 'os', 'channel', 'click_time']
@@ -232,6 +234,6 @@ print("Predicting the submission data...")
 submit['is_attributed'] = lgb_model.predict(test[predictors], num_iteration=lgb_model.best_iteration)
 
 print("Writing the submission data into a csv file...")
-submit.to_csv('submission.csv', index=False)
+submit.to_csv('__output/lgb_ref_0505_02.csv', index=False)
 
 print("Writing complete.")
