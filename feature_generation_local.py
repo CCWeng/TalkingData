@@ -82,9 +82,9 @@ def CreateClickCntColumns_Multi(trn, tst, groupbys):
 		df_all = pd.merge(df_all, cnt, on=gb, how='left')
 		df_all = df_all.set_index('index')
 
-		# inv_c = c + '_clickcnt_inv'
-		# inv_columns.append(inv_c)
-		# df_all[inv_c] = 1. / df_all[cnt_c]
+		inv_c = c + '_clickcnt_inv'
+		inv_columns.append(inv_c)
+		df_all[inv_c] = 1. / df_all[cnt_c]
 
 		df_all[cnt_c] = df_all[cnt_c].astype('uint16')
 
@@ -109,7 +109,7 @@ def CreateClickCntColumns_Multi(trn, tst, groupbys):
 	trn.drop(['train', 'row_id'], axis=1, inplace=True)
 	tst.drop(['train', 'row_id'], axis=1, inplace=True)
 
-	return trn, tst, cnt_columns #, inv_columns
+	return trn, tst, cnt_columns, inv_columns
 
 
 

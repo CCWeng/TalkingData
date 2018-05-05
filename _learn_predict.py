@@ -64,7 +64,7 @@ gc.collect()
 dtrain = xgb.DMatrix(trn[use_columns], trn[target])
 
 watchlist = [(dtrain, 'train')]
-xgb = xgb.train(params5, dtrain, 845, watchlist, maximize=True, verbose_eval=1)
+xgb4 = xgb.train(params4, dtrain, 745, watchlist, maximize=True, verbose_eval=1)
 
 del dtrain
 gc.collect()
@@ -72,7 +72,7 @@ dtest = xgb.DMatrix(tst[use_columns])
 pp3 = xgb4.predict(dtest, ntree_limit=xgb4.best_ntree_limit)
 
 tst['is_attributed'] = pp3
-tst.to_csv('__output/xgb_180412_03.csv', columns = ['click_id', 'is_attributed'], index=False)
+tst.to_csv('__output/xgb_180502_01.csv', columns = ['click_id', 'is_attributed'], index=False)
 
 
 del dtest
@@ -85,7 +85,8 @@ gc.collect()
 watchlist = [(dtrain, 'train'), (dvalid, 'valid')]
 # xgb44 = xgb.train(params4, dtrain, 3000, watchlist, maximize=True, early_stopping_rounds = 200, verbose_eval=1)
 # xgb445 = xgb.train(params4, dtrain, 3000, watchlist, maximize=True, early_stopping_rounds = 200, verbose_eval=1)
-xgb555 = xgb.train(params5, dtrain, 3000, watchlist, maximize=True, early_stopping_rounds = 200, verbose_eval=1)
+xgb555 = xgb.train(params4, dtrain, 3000, watchlist, maximize=True, early_stopping_rounds = 200, verbose_eval=1)
+
 
 del dtrain, dvalid
 gc.collect()
@@ -94,8 +95,22 @@ dtest = xgb.DMatrix(tst[use_columns])
 pp = xgb555.predict(dtest, ntree_limit=xgb555.best_ntree_limit)
 # pp = model.predict( ntree_limit=20)
 tst['is_attributed'] = pp
-tst.to_csv('__output/xgb_180425_02.csv', columns = ['click_id', 'is_attributed'], index=False)
+tst.to_csv('__output/xgb_180503_01.csv', columns = ['click_id', 'is_attributed'], index=False)
 
+
+
+# pp_trn = xgb555.predict(dtrain, ntree_limit=xgb555.best_ntree_limit)
+# y_trn = dtrain.get_label()
+# print roc_auc_score(y_trn, pp_trn)
+
+# pp_val = xgb555.predict(dvalid, ntree_limit=xgb555.best_ntree_limit)
+# y_val = dvalid.get_label()
+# print roc_auc_score(y_val, pp_val)
+
+dtest = xgb.DMatrix(tst[use_columns], tst[target])
+pp_tst = xgb555.predict(dtest, ntree_limit=xgb555.best_ntree_limit)
+y_tst = dtest.get_label()
+print roc_auc_score(y_tst, pp_tst)
 
 ## 845
 

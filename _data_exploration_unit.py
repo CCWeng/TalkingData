@@ -371,6 +371,53 @@ xgb4 = xgb.train(params4, dtrain, 2000, watchlist, early_stopping_rounds=200, ma
 
 
 
+df_score = pd.DataFrame(columns = ['f-score', 'z-stats', 'mu-distance'], index = clkcnt_columns)
+# df_score = pd.DataFrame(columns = ['f-score', 'z-stats', 'mu-distance'], index = cate_columns)
+
+for c in clkcnt_columns:
+# for c in cate_columns:
+	trn0_mu = trn.loc[trn.is_attributed == 0][c].mean()
+	trn1_mu = trn.loc[trn.is_attributed == 1][c].mean()
+
+	trn0_std = trn.loc[trn.is_attributed == 0][c].std()
+	trn1_std = trn.loc[trn.is_attributed == 1][c].std()
+
+	tst0_mu = tst.loc[tst.is_attributed == 0][c].mean()
+	tst1_mu = tst.loc[tst.is_attributed == 1][c].mean()
+
+	tst0_std = tst.loc[tst.is_attributed == 0][c].std()
+	tst1_std = tst.loc[tst.is_attributed == 1][c].std()
+
+	z = fa.Ztest_bi(trn, 'is_attributed', c)
+	mu_diff = np.abs(trn0_mu - trn1_mu)
+
+	df_score.loc[c, 'f-score'] = fscore[c]
+	df_score.loc[c, 'z-stats'] = z
+	df_score.loc[c, 'mu-distance'] = mu_diff
+
+
+
+df_score = df_score.sort_values(by='f-score')
+
+for fea in df_score.index.tolist():
+	trn.groupby(target)[fea].plot('density')
+	title = '%s : fs = %d, mud = %d' % (fea, df_score.loc[fea, 'f-score'], df_score.loc[fea, 'mu_distance'])
+	plt.title(title)
+	plt.show()
+
+
+
+	# print '\nfeature %s : f-score=%d, z-statistics = %.5f, mu distance = %.3f' % (c, fscore[c], z, mu_diff)
+
+	# print '\n%s : %d' % (c, fscore[c])
+	# print 'trn    0\t1'
+	# print 'mu  : %.3f\t%.3f\t%.3f' % (trn0_mu, trn1_mu, mu_diff)
+	# print 'std : %.3f\t%.3f' % (trn0_std, trn1_std)
+
+	# print '----'
+	# print 'tst    0\t1'
+	# print 'mu  : %.3f\t%.3f\t%.3f' % (tst0_mu,  tst1_mu, np.abs(tst0_mu - tst1_mu))
+	# print 'std : %.3f\t%.3f\t%.3f' % (tst0_std, tst1_std, np.abs(tst0_std - tst1_std))
 
 
 

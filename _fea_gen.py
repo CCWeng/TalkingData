@@ -258,6 +258,15 @@ use_columns += cate_columns
 use_columns += clkcnt_columns
 # use_columns += clkcnt_inv_columns
 
+use_columns += clkcnt_mul_columns
+# use_columns += clkcnt_mul_inv_columns
+# use_columns += clkcnt_mul_cap_columns
+
+# use_columns += clkcnt_mul_columns[:1]
+# use_columns += clkcnt_mul_inv_columns[:1]
+# use_columns += clkcnt_mul_cap_columns[:1]
+
+
 
 
 
@@ -279,7 +288,7 @@ groupbys.append(['ip', 'app', 'os'])
 
 
 
-trn, tst, clkcnt_columns_multi, clkcnt_inv_columns_multi = fg2.CreateClickCntColumns_Multi(trn, tst, groupbys)
+trn, tst, clkcnt_mul_columns, clkcnt_mul_inv_columns = fg2.CreateClickCntColumns_Multi(trn, tst, groupbys)
 
 
 # trn, tst, dumm_columns = fg.CreateDummyColumns(trn, tst, cate_columns)
@@ -295,6 +304,27 @@ trn, tst, clkcnt_columns_multi, clkcnt_inv_columns_multi = fg2.CreateClickCntCol
 # trn, tst, timediff_columns = fg2.CreateTimeDiffColumns(trn, tst, ['ip', 'app'])
 
 
+in_columns = clkcnt_mul_columns
+
+new_columns = list()
+for c in in_columns:
+	new_c = c + '_cap'
+	new_columns.append(new_c)
+	mu = trn[c].mean()
+	sigma = trn[c].std()
+	cap_lo = np.floor(mu - sigma * 3.)
+	cap_hi = np.ceil(mu + sigma * 3.)
+	trn[new_c] = trn[c]
+	tst[new_c] = tst[c]
+	trn.loc[trn[c] < cap_lo, new_c] = cap_lo
+	tst.loc[tst[c] < cap_lo, new_c] = cap_lo
+	trn.loc[trn[c] > cap_hi, new_c] = cap_hi
+	tst.loc[tst[c] > cap_hi, new_c] = cap_hi
+	trn[new_c] = trn[new_c].astype('uint16')
+	tst[new_c] = tst[new_c].astype('uint16')
+
+
+clkcnt_mul_cap_columns = new_columns
 
 
 
